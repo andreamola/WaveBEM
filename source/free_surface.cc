@@ -6315,10 +6315,12 @@ int FreeSurface<dim>::residual_and_jacobian(const double t,
   std::vector<fad_double> loc_dphi_dn_res(dofs_per_cell);
   std::vector<fad_double> loc_x_smooth_res(dofs_per_cell);
   std::vector<fad_double> loc_y_smooth_res(dofs_per_cell);
-  Point<3,fad_double> loc_pressure_force;
-  Point<3,fad_double> loc_pressure_moment;
-  Point<3> pressure_force(0.0,0.0,0.0);
-  Point<3> pressure_moment(0.0,0.0,0.0);
+  Tensor<1,3,fad_double> loc_pressure_force;
+  Tensor<1,3,fad_double> loc_pressure_moment;
+  Tensor<1,3> pressure_force;
+  Tensor<1,3> pressure_moment;
+  pressure_force = 0.0;
+  pressure_moment = 0.0;
 
   std::vector< std::vector<fad_double> > loc_stiffness_matrix(dofs_per_cell);
   std::vector< std::vector<fad_double> > loc_mass_matrix(dofs_per_cell);
@@ -6939,11 +6941,15 @@ int FreeSurface<dim>::residual_and_jacobian(const double t,
                 //   cout<<dphi_dt.val()<<" "<<q_phi_dot.val()<<" "<<(q_nodes_vel*phi_grad).val()<<endl;
                 //   }
                 fad_double local_pressure = -(fad_double(rho)*(dphi_dt+q_point*gg+phi_grad*(phi_grad/2.0+VV_inf))*q_JxW[q]);
-                loc_pressure_force += local_pressure*q_normal;
+                Tensor<1,3,fad_double> qq_normal;
+                qq_normal[0] = q_normal(0); qq_normal[1] = q_normal(1); qq_normal[2] = q_normal(2);
+                loc_pressure_force += local_pressure*qq_normal;
+//cout<<"TE TE TE TEEEEEEST: "<<loc_pressure_force<<endl;
+                Tensor<1,3,fad_double> q_mom;
+                q_mom[0] = (q_point(1)-baricenter_pos(1))*q_normal(2)-(q_point(2)-baricenter_pos(2))*q_normal(1);
+                q_mom[1] = (q_point(2)-baricenter_pos(2))*q_normal(0)-(q_point(0)-baricenter_pos(0))*q_normal(2);
+                q_mom[2] = (q_point(0)-baricenter_pos(0))*q_normal(1)-(q_point(1)-baricenter_pos(1))*q_normal(0);
 
-                Point<3,fad_double> q_mom((q_point(1)-baricenter_pos(1))*q_normal(2)-(q_point(2)-baricenter_pos(2))*q_normal(1),
-                                          (q_point(2)-baricenter_pos(2))*q_normal(0)-(q_point(0)-baricenter_pos(0))*q_normal(2),
-                                          (q_point(0)-baricenter_pos(0))*q_normal(1)-(q_point(1)-baricenter_pos(1))*q_normal(0));
                 q_mom = q_mom*local_pressure;
                 loc_pressure_moment+= q_mom;
                 for (unsigned int i=0; i<dofs_per_cell; ++i)
@@ -7311,7 +7317,7 @@ int FreeSurface<dim>::residual_and_jacobian(const double t,
                                               -loc_pressure_force(0).fastAccessDx(3*j+d));
                         jacobian_matrix.add(comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                             comp_dom.vector_dh.n_dofs()+jj,
-                                            -loc_pressure_force(0).fastAccessDx(j+3*dofs_per_cell));
+                                            -loc_pressure_force[0].fastAccessDx(j+3*dofs_per_cell));
                         jacobian_matrix.add(comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                             comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+jj,
                                             -loc_pressure_force(0).fastAccessDx(j+4*dofs_per_cell));
@@ -7321,7 +7327,7 @@ int FreeSurface<dim>::residual_and_jacobian(const double t,
                                                   -loc_pressure_force(0).fastAccessDx(3*j+d+5*dofs_per_cell));
                         jacobian_dot_matrix.add(comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                                 comp_dom.vector_dh.n_dofs()+jj,
-                                                -loc_pressure_force(0).fastAccessDx(j+8*dofs_per_cell));
+                                                -loc_pressure_force[0].fastAccessDx(j+8*dofs_per_cell));
                         jacobian_dot_matrix.add(comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                                 comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+jj,
                                                 -loc_pressure_force(0).fastAccessDx(j+9*dofs_per_cell));
@@ -7334,7 +7340,7 @@ int FreeSurface<dim>::residual_and_jacobian(const double t,
                                               -loc_pressure_force(1).fastAccessDx(3*j+d));
                         jacobian_matrix.add(1+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                             comp_dom.vector_dh.n_dofs()+jj,
-                                            -loc_pressure_force(1).fastAccessDx(j+3*dofs_per_cell));
+                                            -loc_pressure_force[1].fastAccessDx(j+3*dofs_per_cell));
                         jacobian_matrix.add(1+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                             comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+jj,
                                             -loc_pressure_force(1).fastAccessDx(j+4*dofs_per_cell));
@@ -7344,7 +7350,7 @@ int FreeSurface<dim>::residual_and_jacobian(const double t,
                                                   -loc_pressure_force(1).fastAccessDx(3*j+d+5*dofs_per_cell));
                         jacobian_dot_matrix.add(1+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                                 comp_dom.vector_dh.n_dofs()+jj,
-                                                -loc_pressure_force(1).fastAccessDx(j+8*dofs_per_cell));
+                                                -loc_pressure_force[1].fastAccessDx(j+8*dofs_per_cell));
                         jacobian_dot_matrix.add(1+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                                 comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+jj,
                                                 -loc_pressure_force(1).fastAccessDx(j+9*dofs_per_cell));
@@ -7357,7 +7363,7 @@ int FreeSurface<dim>::residual_and_jacobian(const double t,
                                               -loc_pressure_force(2).fastAccessDx(3*j+d));
                         jacobian_matrix.add(2+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                             comp_dom.vector_dh.n_dofs()+jj,
-                                            -loc_pressure_force(2).fastAccessDx(j+3*dofs_per_cell));
+                                            -loc_pressure_force[2].fastAccessDx(j+3*dofs_per_cell));
                         jacobian_matrix.add(2+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                             comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+jj,
                                             -loc_pressure_force(2).fastAccessDx(j+4*dofs_per_cell));
@@ -7367,37 +7373,37 @@ int FreeSurface<dim>::residual_and_jacobian(const double t,
                                                   -loc_pressure_force(2).fastAccessDx(3*j+d+5*dofs_per_cell));
                         jacobian_dot_matrix.add(2+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                                 comp_dom.vector_dh.n_dofs()+jj,
-                                                -loc_pressure_force(2).fastAccessDx(j+8*dofs_per_cell));
+                                                -loc_pressure_force[2].fastAccessDx(j+8*dofs_per_cell));
                         jacobian_dot_matrix.add(2+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                                 comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+jj,
                                                 -loc_pressure_force(2).fastAccessDx(j+9*dofs_per_cell));
                       }
 
                     //if (is_hull_x_translation_imposed != true)
-                    /*
+                    
                         {
                         for (unsigned int d=0;d<3;++d)
                             jacobian_matrix.add(6+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                                 3*jj+d,
-                                                -loc_pressure_moment(0).fastAccessDx(3*j+d));
+                                                -loc_pressure_moment[0].fastAccessDx(3*j+d));
                         jacobian_matrix.add(6+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                             comp_dom.vector_dh.n_dofs()+jj,
-                                            -loc_pressure_moment(0).fastAccessDx(j+3*dofs_per_cell));
+                                            -loc_pressure_moment[0].fastAccessDx(j+3*dofs_per_cell));
                         jacobian_matrix.add(6+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                             comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+jj,
-                                            -loc_pressure_moment(0).fastAccessDx(j+4*dofs_per_cell));
+                                            -loc_pressure_moment[0].fastAccessDx(j+4*dofs_per_cell));
                         for (unsigned int d=0;d<3;++d)
                             jacobian_dot_matrix.add(6+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                                     3*jj+d,
-                                                    -loc_pressure_moment(0).fastAccessDx(3*j+d+5*dofs_per_cell));
+                                                    -loc_pressure_moment[0].fastAccessDx(3*j+d+5*dofs_per_cell));
                         jacobian_dot_matrix.add(6+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                                 comp_dom.vector_dh.n_dofs()+jj,
-                                                -loc_pressure_moment(0).fastAccessDx(j+8*dofs_per_cell));
+                                                -loc_pressure_moment[0].fastAccessDx(j+8*dofs_per_cell));
                         jacobian_dot_matrix.add(6+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                                 comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+jj,
-                                                -loc_pressure_moment(0).fastAccessDx(j+9*dofs_per_cell));
+                                                -loc_pressure_moment[0].fastAccessDx(j+9*dofs_per_cell));
                         }
-                    */
+                    
                     //if (is_hull_y_translation_imposed != true)
                     {
                       for (unsigned int d=0; d<3; ++d)
@@ -7427,23 +7433,23 @@ int FreeSurface<dim>::residual_and_jacobian(const double t,
                         for (unsigned int d=0;d<3;++d)
                             jacobian_matrix.add(8+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                                 3*jj+d,
-                                                -loc_pressure_moment(2).fastAccessDx(3*j+d));
+                                                -loc_pressure_moment[2].fastAccessDx(3*j+d));
                         jacobian_matrix.add(8+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                             comp_dom.vector_dh.n_dofs()+jj,
-                                            -loc_pressure_moment(2).fastAccessDx(j+3*dofs_per_cell));
+                                            -loc_pressure_moment[2].fastAccessDx(j+3*dofs_per_cell));
                         jacobian_matrix.add(8+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                             comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+jj,
-                                            -loc_pressure_moment(2).fastAccessDx(j+4*dofs_per_cell));
+                                            -loc_pressure_moment[2].fastAccessDx(j+4*dofs_per_cell));
                         for (unsigned int d=0;d<3;++d)
                             jacobian_dot_matrix.add(8+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                                     3*jj+d,
-                                                    -loc_pressure_moment(2).fastAccessDx(3*j+d+5*dofs_per_cell));
+                                                    -loc_pressure_moment[2].fastAccessDx(3*j+d+5*dofs_per_cell));
                         jacobian_dot_matrix.add(8+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                                 comp_dom.vector_dh.n_dofs()+jj,
-                                                -loc_pressure_moment(2).fastAccessDx(j+8*dofs_per_cell));
+                                                -loc_pressure_moment[2].fastAccessDx(j+8*dofs_per_cell));
                         jacobian_dot_matrix.add(8+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                                 comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+jj,
-                                                -loc_pressure_moment(2).fastAccessDx(j+9*dofs_per_cell));
+                                                -loc_pressure_moment[2].fastAccessDx(j+9*dofs_per_cell));
                         }
                     */
                   }
@@ -7508,12 +7514,12 @@ int FreeSurface<dim>::residual_and_jacobian(const double t,
                   }
 
                 //if (is_hull_y_translation_imposed != true)
-                /*
+                
                     {
                     for (unsigned int d=0;d<3;++d)
                         jacobian_matrix.add(6+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                             d+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
-                                            -loc_pressure_moment(0).fastAccessDx(d+10*dofs_per_cell));
+                                            -loc_pressure_moment[0].fastAccessDx(d+10*dofs_per_cell));
                     for (unsigned int d=0;d<3;++d)
                         jacobian_matrix.add(6+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                             d+3+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
@@ -7521,13 +7527,13 @@ int FreeSurface<dim>::residual_and_jacobian(const double t,
                     for (unsigned int d=0;d<3;++d)
                         jacobian_matrix.add(6+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                             d+6+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
-                                            -loc_pressure_moment(0).fastAccessDx(d+6+10*dofs_per_cell));
+                                            -loc_pressure_moment[0].fastAccessDx(d+6+10*dofs_per_cell));
                     for (unsigned int d=0;d<4;++d)
                         jacobian_matrix.add(6+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                             d+9+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
-                                            -loc_pressure_moment(0).fastAccessDx(d+9+10*dofs_per_cell));
+                                            -loc_pressure_moment[0].fastAccessDx(d+9+10*dofs_per_cell));
                     }
-                */
+                
                 //if (is_hull_y_translation_imposed != true)
                 {
                   for (unsigned int d=0; d<3; ++d)
@@ -7553,7 +7559,7 @@ int FreeSurface<dim>::residual_and_jacobian(const double t,
                     for (unsigned int d=0;d<3;++d)
                         jacobian_matrix.add(8+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                             d+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
-                                            -loc_pressure_moment(2).fastAccessDx(d+10*dofs_per_cell));
+                                            -loc_pressure_moment[2].fastAccessDx(d+10*dofs_per_cell));
                     for (unsigned int d=0;d<3;++d)
                         jacobian_matrix.add(8+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                             d+3+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
@@ -7561,11 +7567,11 @@ int FreeSurface<dim>::residual_and_jacobian(const double t,
                     for (unsigned int d=0;d<3;++d)
                         jacobian_matrix.add(8+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                             d+6+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
-                                            -loc_pressure_moment(2).fastAccessDx(d+6+10*dofs_per_cell));
+                                            -loc_pressure_moment[2].fastAccessDx(d+6+10*dofs_per_cell));
                     for (unsigned int d=0;d<4;++d)
                         jacobian_matrix.add(8+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
                                             d+9+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
-                                            -loc_pressure_moment(2).fastAccessDx(d+9+10*dofs_per_cell));
+                                            -loc_pressure_moment[2].fastAccessDx(d+9+10*dofs_per_cell));
                     }
                 */
               }
@@ -7783,9 +7789,8 @@ int FreeSurface<dim>::residual_and_jacobian(const double t,
         }
   */
 
-  Point<3,fad_double> hull_ang_vel_res(AbsInertiaMatRow1*omega_dot, AbsInertiaMatRow2*omega_dot, AbsInertiaMatRow3*omega_dot);
-  hull_ang_vel_res = hull_ang_vel_res + Point<3,fad_double>(sservMatRow1*omega,sservMatRow3*omega,sservMatRow3*omega);
-//cout<<"OOOOOOOOOOOOO   "<<hull_ang_vel_res<<endl;
+  //cout<<"OOOOOOOOOOOOO   "<<hull_ang_vel_res<<endl;
+
   for (unsigned int k=0; k<3; ++k)
     {
       for (unsigned int d=0; d<7; ++d)
@@ -7803,8 +7808,21 @@ int FreeSurface<dim>::residual_and_jacobian(const double t,
 //      //hull_ang_vel_res(k) = hull_ang_vel_res(k) - 1.0*(t<10.0? t/10.0:1.0)*pressure_moment(k);
 //      }
 //hull_ang_vel_res(1) = hull_ang_vel_res(1) + 25.0*(t<4.0? t/4.0:1.0)*pow(numbers::PI/2.0,2.0)*cos(numbers::PI/2.0*t);
-  cout<<"Moment Fraction Considered: "<<(t<10.0? 0.0:(t<15.0? (t-10.0)/5.0:1.0))<<endl;
-  hull_ang_vel_res(1) = hull_ang_vel_res(1) - pressure_moment(1);
+  //cout<<"Moment Fraction Considered: "<<(t<10.0? 0.0:(t<15.0? (t-10.0)/5.0:1.0))<<endl;
+
+
+  ////////////HERE ADD FOR FSI ON ROTATION //////////////// 
+  pressure_moment[0] = AbsInertiaMatInv[0][0].val()*pressure_moment[0]+
+                       AbsInertiaMatInv[0][1].val()*pressure_moment[1]+
+                       AbsInertiaMatInv[0][2].val()*pressure_moment[2];
+  pressure_moment[1] = AbsInertiaMatInv[1][0].val()*pressure_moment[0]+
+                       AbsInertiaMatInv[1][1].val()*pressure_moment[1]+
+                       AbsInertiaMatInv[1][2].val()*pressure_moment[2];
+  pressure_moment[2] = AbsInertiaMatInv[2][0].val()*pressure_moment[0]+
+                       AbsInertiaMatInv[2][1].val()*pressure_moment[1]+
+                       AbsInertiaMatInv[2][2].val()*pressure_moment[2];
+  for (unsigned int k=0; k<3; ++k)
+      hull_ang_vel_res[k] = hull_ang_vel_res[k] - pressure_moment[k];
 
   hull_quaternions_scal_res = s_dot + omega*vv/2.0;
 
