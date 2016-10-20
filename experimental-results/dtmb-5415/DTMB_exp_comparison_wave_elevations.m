@@ -3,7 +3,8 @@ close all
 
 
 
-A1 = load('waveElevationY082.csv');
+A1 = load('waveElevationY082_6DOFS.csv');
+%A1 = load('waveElevationY082.csv');
 B1 = load('waveCutsOlivieri0082.csv');
 figure(1)
 hold off
@@ -16,7 +17,8 @@ xlabel('x/L_{pp}','Fontsize',14)
 ylabel('z/L_{pp}','Fontsize',14)
 print -dpng -color waveElevationY082.png
 
-A2 = load('waveElevationY172.csv');
+A2 = load('waveElevationY172_6DOFS.csv');
+%A2 = load('waveElevationY172.csv');
 B2 = load('waveCutsOlivieri0172.csv');
 figure(2)
 hold off
@@ -29,7 +31,8 @@ xlabel('x/L_{pp}','Fontsize',14)
 ylabel('z/L_{pp}','Fontsize',14)
 print -dpng -color waveElevationY172.png
 
-A3 = load('waveElevationY259.csv');
+A3 = load('waveElevationY259_6DOFS.csv');
+%A3 = load('waveElevationY259.csv');
 B3 = load('waveCutsOlivieri0259.csv');
 figure(3)
 hold off
@@ -44,7 +47,8 @@ print -dpng -color waveElevationY259.png
 
 
 
-A4 = load('waveElevationY347.csv');
+A4 = load('waveElevationY347_6DOFS.csv');
+%A4 = load('waveElevationY347.csv');
 B4 = load('waveCutsOlivieri0347.csv');
 figure(4)
 hold off
@@ -58,7 +62,8 @@ ylabel('z/L_{pp}','Fontsize',14)
 print -dpng -color waveElevationY347.png
 
 figure(5)
-C = load('DTMB_Fr028_fine_test_water_line.txt');D1 = load('goteborgExpFr028_2340.csv');
+C = load('DTMB_Fr028_FSI_6dofs_symm_num_beach_phi_eta_dot_water_line.txt');
+%C = load('DTMB_Fr028_fine_test_water_line.txt');
 D1 = load('goteborgExpFr028_2340.csv');
 D2 = load('goteborgExpFr028_5415.csv');
 D3 = load('goteborgExpFr028_5512.csv');

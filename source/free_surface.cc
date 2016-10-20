@@ -4705,29 +4705,29 @@ void FreeSurface<dim>::prepare_restart(const double t, Vector<double> &y, Vector
   //output_results(filename1, t, y, yp);
 
 
-  /*
+  
        // these lines test the jacobian of the DAE system
-
+/*
        Vector<double> delta_y(this->n_dofs());
        Vector<double> delta_res(this->n_dofs());
 
        for (unsigned int i=0; i<this->n_dofs();++i)
            {
            double f = (double)rand()/RAND_MAX;
-           delta_y(i) = -1e-8 + f * (2e-8);
+           delta_y(i) = -1e-1 + f * (2e-1);
            cout<<i<<" "<<delta_y(i)<<endl;
            }
        Vector<double> delta_y_dot(delta_y);
-       delta_y_dot*=00000001.0;
+       delta_y_dot*=00000000.0;
        residual(t,res,y,yp);
-       jacobian(t,delta_res,y,yp,delta_y,00000001.0);
+       jacobian(t,delta_res,y,yp,delta_y,00000000.0);
        y.add(delta_y);
        yp.add(delta_y_dot);
        delta_res.add(res);
        residual(t,res,y,yp);
        cout<<"----------Test---------"<<endl;
        for (unsigned int i=0; i<this->n_dofs(); ++i)
-           if (fabs(res(i)-delta_res(i)) > 1e-15)
+           if (fabs(res(i)-delta_res(i)) > 1e-2)
            //if (fabs(res(i)) > 1e-20)
            cout<<i<<"  "<<delta_res(i)<<" vs "<<res(i)<<"      err "<<res(i)-delta_res(i)<<"   "<<sys_comp(i)<<endl;
        delta_res*=-1;
@@ -7772,16 +7772,16 @@ int FreeSurface<dim>::residual_and_jacobian(const double t,
   Point<3,fad_double> vv_dot(v_x_dot,v_y_dot,v_z_dot);
 
   Point<3,fad_double> rhs_quat_vect(ss*omega_x+WMatRow1*vv,ss*omega_y+WMatRow2*vv,ss*omega_z+WMatRow1*vv);
-  /*
-    Point<3,fad_double> hull_ang_vel_res(omega_x_dot,omega_y_dot,omega_z_dot);
+  
+  //  Point<3,fad_double> hull_ang_vel_res(omega_x_dot,omega_y_dot,omega_z_dot);
 
-    for (unsigned int k=0; k<3; ++k)
-        {
-        jacobian_dot_matrix.add(6+k+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
-                                6+k+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
-                                1.0);
-        }
-  */
+  //  for (unsigned int k=0; k<3; ++k)
+  //      {
+  //      jacobian_dot_matrix.add(6+k+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
+  //                              6+k+comp_dom.vector_dh.n_dofs()+comp_dom.dh.n_dofs()+comp_dom.dh.n_dofs(),
+  //                              1.0);
+  //      }
+  
 
   Point<3,fad_double> hull_ang_vel_res(AbsInertiaMatRow1*omega_dot, AbsInertiaMatRow2*omega_dot, AbsInertiaMatRow3*omega_dot);
   hull_ang_vel_res = hull_ang_vel_res + Point<3,fad_double>(sservMatRow1*omega,sservMatRow3*omega,sservMatRow3*omega);
@@ -7803,7 +7803,7 @@ int FreeSurface<dim>::residual_and_jacobian(const double t,
 //      //hull_ang_vel_res(k) = hull_ang_vel_res(k) - 1.0*(t<10.0? t/10.0:1.0)*pressure_moment(k);
 //      }
 //hull_ang_vel_res(1) = hull_ang_vel_res(1) + 25.0*(t<4.0? t/4.0:1.0)*pow(numbers::PI/2.0,2.0)*cos(numbers::PI/2.0*t);
-  cout<<"Moment Fraction Considered: "<<(t<10.0? 0.0:(t<15.0? (t-10.0)/5.0:1.0))<<endl;
+  //cout<<"Moment Fraction Considered: "<<(t<10.0? 0.0:(t<15.0? (t-10.0)/5.0:1.0))<<endl;
   hull_ang_vel_res(1) = hull_ang_vel_res(1) - pressure_moment(1);
 
   hull_quaternions_scal_res = s_dot + omega*vv/2.0;
